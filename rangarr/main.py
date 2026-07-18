@@ -5,15 +5,22 @@ missing and upgrade-eligible items, dispatching search commands with configurabl
 delays, and repeating at scheduled intervals.
 """
 
+import asyncio
 import datetime
 import logging
 import math
 import os
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Any
 
+import uvicorn
+
+from rangarr.api import APIState
+from rangarr.api import add_json_logging_handler
+from rangarr.api import create_api_app
 from rangarr.clients.arr import ArrClient
 from rangarr.clients.arr import LidarrClient
 from rangarr.clients.arr import RadarrClient
@@ -508,6 +515,49 @@ def run() -> None:
         logger.error('All configured *arr instances failed to connect. Check network connectivity and instance URLs.')
         sys.exit(1)
 
+    # Initialize API state and logging
+    api_state = APIState()
+    api_state.dry_run_mode = _get_setting(settings, 'dry_run')
+    api_state.config = config
+
+    # Add JSON logging handler for API to consume
+    json_handler = add_json_logging_handler(api_state)
+    logging.getLogger().addHandler(json_handler)
+
+    # Initialize per-instance metrics
+    for client in active_clients:
+        api_state.instance_metrics[client.name] = {
+            'type': client.__class__.__name__.removesuffix('Client').lower(),
+            'enabled': True,
+            'connected': True,
+            'connection_error': None,
+            'queue_depth': 0,
+            'queue_depth_limit': client.max_queue_size,
+            'last_search': None,
+            'searches_today': 0,
+            'searches_triggered': 0,
+            'missing_searches': 0,
+            'upgrade_searches': 0,
+            'season_pack_searches': 0,
+            'search_success_rate': 1.0,
+            'failed_searches_today': 0,
+            'missing_candidates_available': 0,
+            'upgrade_candidates_available': 0,
+            'next_search_in_seconds': 0,
+            'avg_items_per_cycle': 0.0,
+            'connection_failures': 0,
+        }
+
+    # Start API server if enabled
+    api_enabled = os.getenv('RANGARR_API_ENABLED', 'true').lower() in ('true', '1', 'yes')
+    api_port = int(os.getenv('RANGARR_API_PORT', '9000'))
+    api_key = os.getenv('RANGARR_API_KEY', 'rangarr-default-key')  # TODO: Generate or require in config
+
+    if api_enabled:
+        _start_api_server(api_state, api_key, api_port)
+    else:
+        logger.info('API server disabled (set RANGARR_API_ENABLED=true to enable)')
+
     _log_rangarr_start(active_clients, settings)
 
     missing_interval_secs = _resolve_interval_secs(settings, 'run_interval_minutes_missing')
@@ -517,6 +567,7 @@ def run() -> None:
 
     last_missing_run = -math.inf
     last_upgrade_run = -math.inf
+    cycle_start = time.time()  # Track for today's metrics
 
     while True:
         if parsed_window:
@@ -528,6 +579,12 @@ def run() -> None:
                 time.sleep(secs)
                 continue
 
+        # Update active hours status in API state
+        if parsed_window:
+            start_time, end_time = parsed_window
+            now = datetime.datetime.now().time()
+            api_state.active_hours_active = _is_within_active_hours(start_time, end_time, now)
+
         now = time.monotonic()
         run_missing = (now - last_missing_run) >= missing_interval_secs
         run_upgrade = (now - last_upgrade_run) >= upgrade_interval_secs
@@ -537,7 +594,21 @@ def run() -> None:
         if run_upgrade:
             last_upgrade_run = now
 
+        cycle_start_time = time.time()
         _run_search_cycle(active_clients, settings, run_missing=run_missing, run_upgrade=run_upgrade)
+        cycle_duration = time.time() - cycle_start_time
+        api_state.last_cycle_duration_ms = int(cycle_duration * 1000)
+        api_state.cycle_count += 1
+
+        # Reset daily metrics at midnight
+        now_time = time.time()
+        if int(now_time / 86400) > int(cycle_start / 86400):
+            api_state.searches_today = 0
+            api_state.failed_searches_today = 0
+            for metrics in api_state.instance_metrics.values():
+                metrics['searches_today'] = 0
+                metrics['failed_searches_today'] = 0
+            cycle_start = now_time
 
         now = time.monotonic()
         logger.info(
@@ -548,6 +619,11 @@ def run() -> None:
                 upgrade_interval_secs - (now - last_upgrade_run),
             )
         )
+
+        # Update next run times in API state
+        api_state.next_missing_in_seconds = missing_interval_secs - (now - last_missing_run)
+        api_state.next_upgrade_in_seconds = upgrade_interval_secs - (now - last_upgrade_run)
+
         time.sleep(
             max(
                 _MIN_SLEEP_SECONDS,
@@ -590,6 +666,38 @@ def verify_arr_clients(clients: list[ArrClient]) -> list[ArrClient]:
         if connected:
             verified.append(client)
     return verified
+
+
+def _start_api_server(state: APIState, api_key: str, api_port: int = 9000) -> threading.Thread:
+    """Start FastAPI server in a background thread.
+
+    Args:
+        state: Shared API state container.
+        api_key: Required API key for all endpoints.
+        api_port: Port to listen on.
+
+    Returns:
+        Daemon thread running the API server.
+    """
+    app = create_api_app(state, api_key)
+    config = uvicorn.Config(
+        app,
+        host='0.0.0.0',
+        port=api_port,
+        log_level='warning',  # Suppress uvicorn logs; use rangarr's logger
+        access_log=False,
+    )
+    server = uvicorn.Server(config)
+
+    def run_server() -> None:
+        """Run the server in a blocking manner."""
+        asyncio.run(server.serve())
+
+    thread = threading.Thread(target=run_server, daemon=True, name='RangarrAPI')
+    thread.start()
+    logger.info(f'API server started on 0.0.0.0:{api_port}')
+    return thread
+
 
 
 if __name__ == '__main__':

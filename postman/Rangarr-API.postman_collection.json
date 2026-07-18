@@ -1,0 +1,454 @@
+{
+  "info": {
+    "name": "Rangarr API",
+    "description": "Complete REST API collection for Rangarr orchestration service. Test all endpoints with built-in validations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "description": "Basic health checks and system status",
+      "item": [
+        {
+          "name": "GET /api/health",
+          "description": "Minimal liveness probe for Kubernetes/Docker. Returns API status and version.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Api-Key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"ok\",\n  \"version\": \"0.10.0\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/status",
+          "description": "Current rangarr orchestration state and cycle information",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "status"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Api-Key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/status",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "status"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"running\": true,\n  \"uptime_seconds\": 86400,\n  \"uptime_str\": \"1d 0h 0m\",\n  \"current_cycle\": 342,\n  \"next_missing_in_seconds\": 1234,\n  \"next_upgrade_in_seconds\": 2345,\n  \"last_cycle_duration_ms\": 127,\n  \"total_searches_triggered\": 5230,\n  \"searches_today\": 247,\n  \"failed_searches_today\": 5,\n  \"dry_run_mode\": false,\n  \"active_hours_active\": true,\n  \"timestamp\": \"2026-07-18T14:23:45Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/instances",
+          "description": "Real-time status of each *arr instance (Radarr, Sonarr, Lidarr, etc.)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/instances",
+              "host": ["{{base_url}}"],
+              "path": ["api", "instances"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Api-Key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/instances",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "instances"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"instances\": [\n    {\n      \"name\": \"Radarr-Movies\",\n      \"type\": \"radarr\",\n      \"enabled\": true,\n      \"connected\": true,\n      \"connection_error\": null,\n      \"queue_depth\": 5,\n      \"queue_depth_limit\": 20,\n      \"last_search\": \"2026-07-18T14:15:32Z\",\n      \"searches_today\": 127,\n      \"search_success_rate\": 0.98,\n      \"missing_candidates_available\": 12,\n      \"upgrade_candidates_available\": 8,\n      \"next_search_in_seconds\": 456\n    },\n    {\n      \"name\": \"Sonarr-TV\",\n      \"type\": \"sonarr\",\n      \"enabled\": true,\n      \"connected\": true,\n      \"connection_error\": null,\n      \"queue_depth\": 3,\n      \"queue_depth_limit\": 15,\n      \"last_search\": \"2026-07-18T14:20:15Z\",\n      \"searches_today\": 85,\n      \"search_success_rate\": 0.95,\n      \"missing_candidates_available\": 8,\n      \"upgrade_candidates_available\": 5,\n      \"next_search_in_seconds\": 234\n    }\n  ],\n  \"timestamp\": \"2026-07-18T14:23:45Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Configuration",
+      "description": "Configuration endpoints",
+      "item": [
+        {
+          "name": "GET /api/config",
+          "description": "Current configuration with secrets redacted. Shows global settings and all configured instances.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "config"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Api-Key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/config",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "config"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"global\": {\n    \"interval_minutes\": 60,\n    \"interval_missing_minutes\": 30,\n    \"interval_upgrade_minutes\": 120,\n    \"missing_batch_size\": 20,\n    \"upgrade_batch_size\": 10,\n    \"stagger_interval_seconds\": 30,\n    \"search_order\": \"last_searched_ascending\",\n    \"active_hours\": \"22:00-06:00\",\n    \"dry_run\": false,\n    \"interleave_instances\": false,\n    \"interleave_types\": true,\n    \"retry_interval_days\": 30,\n    \"max_queue_size\": 0,\n    \"season_packs\": false\n  },\n  \"instances\": [\n    {\n      \"name\": \"Radarr-Movies\",\n      \"type\": \"radarr\",\n      \"host\": \"http://radarr:7878\",\n      \"enabled\": true,\n      \"weight\": 1.5,\n      \"max_queue_size\": 20,\n      \"api_key\": \"***REDACTED***\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Logs & Monitoring",
+      "description": "Log retrieval and filtering",
+      "item": [
+        {
+          "name": "GET /api/logs (basic)",
+          "description": "Retrieve recent log lines. Default: 100 lines, INFO level and above.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/logs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "logs"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Api-Key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/logs",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "logs"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"logs\": [\n    {\n      \"timestamp\": \"2026-07-18T14:23:45Z\",\n      \"level\": \"INFO\",\n      \"instance\": \"Radarr-Movies\",\n      \"message\": \"Searching (missing): The Matrix (1/5)\"\n    }\n  ],\n  \"total_count\": 1523,\n  \"returned\": 100\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/logs (with level filter)",
+          "description": "Filter logs by level (DEBUG, INFO, WARNING, ERROR)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/logs?lines=50&level=WARNING",
+              "host": ["{{base_url}}"],
+              "path": ["api", "logs"],
+              "query": [
+                {
+                  "key": "lines",
+                  "value": "50"
+                },
+                {
+                  "key": "level",
+                  "value": "WARNING"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/logs (with search)",
+          "description": "Search logs by substring match",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/logs?lines=100&search=searched",
+              "host": ["{{base_url}}"],
+              "path": ["api", "logs"],
+              "query": [
+                {
+                  "key": "lines",
+                  "value": "100"
+                },
+                {
+                  "key": "search",
+                  "value": "searched"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/logs (by instance)",
+          "description": "Filter logs by instance name",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/logs?instance=Radarr-Movies&lines=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "logs"],
+              "query": [
+                {
+                  "key": "instance",
+                  "value": "Radarr-Movies"
+                },
+                {
+                  "key": "lines",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Metrics & Analytics",
+      "description": "Historical metrics and aggregations",
+      "item": [
+        {
+          "name": "GET /api/metrics",
+          "description": "Global and per-instance aggregated metrics. Includes search statistics, success rates, and connection status.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "metrics"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Api-Key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/metrics",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "metrics"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"global\": {\n    \"total_searches_triggered\": 5230,\n    \"searches_today\": 247,\n    \"searches_this_hour\": 18,\n    \"last_cycle_duration_ms\": 127,\n    \"avg_cycle_duration_ms\": 134,\n    \"failed_searches_today\": 5,\n    \"retry_skips_today\": 89,\n    \"tag_filtered_out_today\": 12\n  },\n  \"per_instance\": {\n    \"Radarr-Movies\": {\n      \"searches_triggered\": 2150,\n      \"searches_today\": 127,\n      \"missing_searches\": 847,\n      \"upgrade_searches\": 303,\n      \"season_pack_searches\": 0,\n      \"failed_searches_today\": 2,\n      \"avg_items_per_cycle\": 3.2,\n      \"connection_failures\": 0\n    },\n    \"Sonarr-TV\": {\n      \"searches_triggered\": 1890,\n      \"searches_today\": 85,\n      \"missing_searches\": 650,\n      \"upgrade_searches\": 240,\n      \"season_pack_searches\": 15,\n      \"failed_searches_today\": 1,\n      \"avg_items_per_cycle\": 2.8,\n      \"connection_failures\": 1\n    }\n  },\n  \"timestamp\": \"2026-07-18T14:23:45Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Control & Actions",
+      "description": "Manual control and search triggering",
+      "item": [
+        {
+          "name": "POST /api/search/trigger",
+          "description": "Manually trigger a search cycle for specific instances or all enabled instances.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Api-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"missing\",\n  \"instances\": [\"Radarr-Movies\"],\n  \"dry_run\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/trigger",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "trigger"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Api-Key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"missing\",\n  \"instances\": [\"Radarr-Movies\"],\n  \"dry_run\": false\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/search/trigger",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "search", "trigger"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"scheduled\",\n  \"message\": \"Search cycle queued (will run within 1s)\",\n  \"cycle_id\": \"manual_1234567890\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-Api-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{api_key}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:9000",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "rangarr-default-key",
+      "type": "string"
+    }
+  ]
+}
